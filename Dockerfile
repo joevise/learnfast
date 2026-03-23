@@ -10,6 +10,9 @@ RUN npm install --omit=dev && npm cache clean --force
 COPY server/src ./src
 COPY server/.env.example .env
 
+# Copy public files (frontend)
+COPY public ./public
+
 # Create data directory
 RUN mkdir -p /app/data
 
