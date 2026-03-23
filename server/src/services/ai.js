@@ -1,8 +1,9 @@
 const fetch = require('node-fetch');
+const https = require('https');
 
-const API_URL = process.env.MINIMAX_API_URL || 'https://api.minimax.chat/v1/text/chatcompletion_pro';
+// Coding Plan key uses Anthropic-compatible API
+const API_URL = process.env.MINIMAX_API_URL || 'https://api.minimaxi.com/anthropic/v1/messages';
 const API_KEY = process.env.MINIMAX_API_KEY || '';
-const GROUP_ID = process.env.MINIMAX_GROUP_ID || '1732073';
 
 async function analyzeArticle(url, content) {
   const systemPrompt = `你是一个专业的学习助手。请分析用户提供的文章，生成结构化的学习内容。始终用中文回答。
@@ -13,61 +14,102 @@ async function analyzeArticle(url, content) {
 3. 2张记忆闪卡（问题和答案，每个问题配一个答案）
 4. 1个小测验（1个选择题，4个选项）
 
-以JSON格式返回：
-{
-  "title": "文章标题或推断主题",
-  "summary": "摘要内容",
-  "points": ["要点1", "要点2", "要点3"],
-  "flashcards": [{"q": "问题", "a": "答案"}],
-  "quiz": {"q": "问题", "options": ["A选项", "B选项", "C选项", "D选项"], "answer": 0}
-}`;
+以JSON格式返回，不要包含任何其他内容：
+{"title":"标题","summary":"摘要","points":["要点1","要点2","要点3"],"flashcards":[{"q":"问题","a":"答案"}],"quiz":{"q":"问题","options":["A选项","B选项","C选项","D选项"],"answer":0}}`;
 
   const userPrompt = content 
     ? `文章URL: ${url}\n\n文章内容:\n${content.substring(0, 3000)}`
     : `文章URL: ${url}\n\n（无法获取文章内容，请根据URL推断主题并生成通用的学习内容）`;
 
   try {
-    const response = await fetch(`${API_URL}?GroupId=${GROUP_ID}`, {
+    const agent = new https.Agent({ 
+      rejectUnauthorized: false 
+    });
+
+    const response = await fetch(API_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${API_KEY}`
+        'Authorization': `Bearer ${API_KEY}`,
+        'x-api-key': API_KEY,
+        'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'MiniMax-Text-01',
+        model: 'MiniMax-M2.7',
         messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt }
-        ]
+          { role: 'user', content: `${systemPrompt}\n\n${userPrompt}` }
+        ],
+        max_tokens: 2048,
+        temperature: 0.7
       }),
-      timeout: 60000
+      agent,
+      timeout: 90000
     });
 
     if (!response.ok) {
       const errText = await response.text();
+      console.error('MiniMax API error:', response.status, errText);
       throw new Error(`MiniMax API failed: ${response.status} - ${errText}`);
     }
     
     const data = await response.json();
     
-    let text = data.choices?.[0]?.messages?.[0]?.text || 
-               data.choices?.[0]?.message?.content || 
-               '';
-    
-    // Parse JSON from response
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      return JSON.parse(jsonMatch[0]);
+    // Anthropic API format: response.content array with type "text" or "thinking"
+    let text = '';
+    if (data.content && Array.isArray(data.content)) {
+      for (const item of data.content) {
+        if (item.type === 'text' && item.text) {
+          text = item.text;
+          break;
+        }
+      }
     }
     
-    // Fallback if JSON parse fails
-    console.warn('Failed to parse AI response as JSON:', text.substring(0, 200));
+    if (!text) {
+      if (data.error) {
+        throw new Error(`API Error: ${data.error.message || JSON.stringify(data.error)}`);
+      }
+      console.warn('Unexpected API response structure:', JSON.stringify(data).substring(0, 300));
+      return generateFallbackAnalysis(url);
+    }
+    
+    // Parse JSON from response
+    let result = null;
+    try {
+      result = JSON.parse(text);
+    } catch (e) {
+      // Try to find JSON object in the text
+      const match = text.match(/\{[\s\S]*\}/);
+      if (match) {
+        try {
+          result = JSON.parse(match[0]);
+        } catch (e2) {
+          // Try removing thinking reference and parse again
+          const cleaned = text.replace(/```json\s*/g, '').replace(/```\s*/g, '');
+          const cleanMatch = cleaned.match(/\{[\s\S]*\}/);
+          if (cleanMatch) {
+            try {
+              result = JSON.parse(cleanMatch[0]);
+            } catch (e3) {}
+          }
+        }
+      }
+    }
+    
+    if (result && result.title) {
+      return result;
+    }
+    
+    console.warn('Failed to parse AI response as JSON:', text.substring(0, 500));
     return generateFallbackAnalysis(url);
     
   } catch (err) {
     console.error('AI analysis failed:', err.message);
-    if (err.message.includes('401') || err.message.includes('403')) {
+    if (err.message.includes('401') || err.message.includes('403') || err.message.includes('2049')) {
       throw new Error('AI API认证失败，请检查API密钥配置');
+    }
+    if (err.message.includes('insufficient balance')) {
+      throw new Error('MiniMax账户余额不足，请充值后重试');
     }
     if (err.message.includes('timeout')) {
       throw new Error('AI分析超时，请稍后重试');

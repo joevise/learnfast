@@ -17,56 +17,55 @@ function isWeChatArticle(url) {
 }
 
 async function extractWeChatArticle(url) {
-  // Try multiple wechat article extraction services
-  const services = [
-    `https://api.moeyy.cn/wechat-article?url=${encodeURIComponent(url)}`,
-    `https://r.ikuniverse.com/api/wxarticle?url=${encodeURIComponent(url)}`,
-  ];
+  // WeChat requires special handling - try direct fetch with proper headers
+  const https = require('https');
+  const agent = new https.Agent({ 
+    rejectUnauthorized: false,
+    keepAlive: true
+  });
   
-  for (const serviceUrl of services) {
-    try {
-      const response = await fetch(serviceUrl, {
-        timeout: 10000,
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36'
-        }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        if (data.content || data.text || data.html) {
-          return {
-            title: data.title || extractTitle(data.content || data.html),
-            content: data.content || data.text || cleanHtml(data.html || ''),
-            author: data.author || '',
-            source: 'wechat'
-          };
-        }
-      }
-    } catch (e) {
-      console.warn(`WeChat extraction service failed: ${serviceUrl}`, e.message);
+  // Try direct fetch with WeChat-compatible headers
+  try {
+    const response = await fetch(url, {
+      timeout: 15000,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'zh-CN,zh;q=0.9',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'Connection': 'keep-alive'
+      },
+      agent
+    });
+    
+    if (response.ok) {
+      const html = await response.text();
+      return parseHtml(html, url);
     }
+  } catch (e) {
+    console.warn('WeChat direct fetch failed:', e.message);
   }
   
-  // Fallback: try direct fetch with cheerio
+  // Fallback to regular extraction
   return await extractViaCheerio(url);
 }
 
 async function extractRegularArticle(url) {
-  // Use allorigins.win proxy to bypass CORS
-  const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
-  
+  // Direct fetch with cheerio - use a simple proxy fallthrough
   try {
-    const response = await fetch(proxyUrl, { timeout: 15000 });
-    const html = await response.text();
-    return parseHtml(html, url);
-  } catch (e) {
-    console.warn('allorigins proxy failed, trying direct fetch:', e.message);
     return await extractViaCheerio(url);
+  } catch (e) {
+    console.warn('Direct fetch failed:', e.message);
+    return { title: '', content: '', author: '', source: 'direct' };
   }
 }
 
 async function extractViaCheerio(url) {
+  const https = require('https');
+  const agent = new https.Agent({ 
+    rejectUnauthorized: false 
+  });
+  
   try {
     const response = await fetch(url, {
       timeout: 15000,
@@ -74,7 +73,8 @@ async function extractViaCheerio(url) {
         'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
         'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8'
-      }
+      },
+      agent
     });
     
     if (!response.ok) {
