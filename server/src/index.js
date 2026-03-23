@@ -14,7 +14,8 @@ initDb();
 
 // Middleware
 app.use(helmet({
-  crossOriginResourcePolicy: { policy: "cross-origin" }
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  contentSecurityPolicy: false, // Disabled for inline scripts in frontend
 }));
 app.use(cors());
 app.use(express.json());
