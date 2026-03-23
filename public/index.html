@@ -329,47 +329,46 @@ body {
 </div>
 
 <script>
-// ========== State ==========
+// ========== State (synced with server) ==========
 const API_BASE = window.location.origin;
-const FREE_DAILY = 30;
 
-let state = {
-  dailyCount: 0,
-  lastDate: null
+let quota = {
+  remaining: 30,
+  limit: 30,
+  allowed: true,
+  resetAt: null
 };
 
-// Load state from localStorage
-const stored = localStorage.getItem('learnfast_state');
-if (stored) {
-  const parsed = JSON.parse(stored);
-  const today = new Date().toDateString();
-  if (parsed.lastDate === today) {
-    state = parsed;
-  } else {
-    state.dailyCount = 0;
-    state.lastDate = today;
+// ========== Quota Management (server-side) ==========
+async function loadQuota() {
+  try {
+    const response = await fetch(`${API_BASE}/api/quota`);
+    const data = await response.json();
+    if (data.success && data.quota) {
+      quota = data.quota;
+      updateQuotaUI();
+    }
+  } catch (err) {
+    console.warn('Failed to load quota:', err);
+    // Fallback: assume available
+    quota.remaining = 30;
+    quota.allowed = true;
   }
 }
 
-// Update streak badge
-document.getElementById('streakNum').textContent = state.dailyCount > 0 ? Math.min(state.dailyCount, 99) : 0;
-
-function saveState() {
-  localStorage.setItem('learnfast_state', JSON.stringify(state));
-}
-
-function canAnalyze() {
-  return state.dailyCount < FREE_DAILY;
-}
-
-function incrementCount() {
-  state.dailyCount++;
-  state.lastDate = new Date().toDateString();
-  saveState();
-  document.getElementById('streakNum').textContent = Math.min(state.dailyCount, 99);
-  if (state.dailyCount >= FREE_DAILY) {
-    document.getElementById('hintText').textContent = '今日次数已用完，明天再来～';
-    document.getElementById('analyzeBtn').disabled = true;
+function updateQuotaUI() {
+  const btn = document.getElementById('analyzeBtn');
+  const hint = document.getElementById('hintText');
+  const streakNum = document.getElementById('streakNum');
+  
+  streakNum.textContent = quota.remaining;
+  
+  if (!quota.allowed || quota.remaining <= 0) {
+    btn.disabled = true;
+    hint.textContent = `今日次数已用完，将于明天重置`;
+  } else {
+    btn.disabled = false;
+    hint.textContent = `今日剩余 ${quota.remaining} 次`;
   }
 }
 
@@ -377,7 +376,8 @@ function incrementCount() {
 async function analyzeUrl() {
   const url = document.getElementById('urlInput').value.trim();
   if (!url) return;
-  if (!canAnalyze()) {
+  
+  if (!quota.allowed || quota.remaining <= 0) {
     showError('今日次数已用完，请明天再来～');
     return;
   }
@@ -398,7 +398,16 @@ async function analyzeUrl() {
       throw new Error(data.error || data.message || '分析失败');
     }
 
-    incrementCount();
+    // Update quota from response
+    if (data.meta && typeof data.meta.quotaRemaining === 'number') {
+      quota.remaining = data.meta.quotaRemaining;
+      quota.allowed = quota.remaining > 0;
+    } else {
+      // Refresh quota from server
+      await loadQuota();
+    }
+    
+    updateQuotaUI();
     displayResults(data.analysis, url, data.id);
     loadHistory();
   } catch (err) {
@@ -514,8 +523,9 @@ async function loadAnalysis(id) {
   }
 }
 
-// Load history on init
+// Load history and quota on init
 loadHistory();
+loadQuota();
 
 // Enter key to submit
 document.getElementById('urlInput').addEventListener('keypress', (e) => {

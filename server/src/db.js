@@ -32,6 +32,14 @@ function initDb() {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 
+    CREATE TABLE IF NOT EXISTS quotas (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      ip_hash TEXT NOT NULL,
+      date TEXT NOT NULL,
+      count INTEGER DEFAULT 0,
+      UNIQUE(ip_hash, date)
+    );
+
     CREATE TABLE IF NOT EXISTS api_keys (
       id TEXT PRIMARY KEY,
       key_hash TEXT UNIQUE NOT NULL,
@@ -51,6 +59,7 @@ function initDb() {
 
     CREATE INDEX IF NOT EXISTS idx_analyses_created ON analyses(created_at);
     CREATE INDEX IF NOT EXISTS idx_analyses_url ON analyses(url);
+    CREATE INDEX IF NOT EXISTS idx_quotas_ip_date ON quotas(ip_hash, date);
   `);
 
   console.log('Database initialized at:', DB_PATH);
@@ -103,4 +112,46 @@ function hashString(str) {
   return hash.toString(16);
 }
 
-module.exports = { initDb, getDb, saveAnalysis, getAnalysis, getRecentAnalyses };
+// Quota management (per IP, resets daily)
+const DAILY_LIMIT = 30;
+
+function checkUserQuota(ip) {
+  const ipHash = hashString(ip);
+  const today = new Date().toDateString();
+  
+  const stmt = db.prepare('SELECT * FROM quotas WHERE ip_hash = ? AND date = ?');
+  const row = stmt.get(ipHash, today);
+  
+  if (!row) {
+    return { allowed: true, remaining: DAILY_LIMIT, used: 0, resetAt: getTomorrow() };
+  }
+  
+  return {
+    allowed: row.count < DAILY_LIMIT,
+    remaining: Math.max(0, DAILY_LIMIT - row.count),
+    used: row.count,
+    resetAt: getTomorrow()
+  };
+}
+
+function incrementUserQuota(ip) {
+  const ipHash = hashString(ip);
+  const today = new Date().toDateString();
+  
+  const existing = db.prepare('SELECT * FROM quotas WHERE ip_hash = ? AND date = ?').get(ipHash, today);
+  
+  if (existing) {
+    db.prepare('UPDATE quotas SET count = count + 1 WHERE ip_hash = ? AND date = ?').run(ipHash, today);
+  } else {
+    db.prepare('INSERT INTO quotas (ip_hash, date, count) VALUES (?, ?, 1)').run(ipHash, today);
+  }
+}
+
+function getTomorrow() {
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  tomorrow.setHours(0, 0, 0, 0);
+  return tomorrow.toISOString();
+}
+
+module.exports = { initDb, getDb, saveAnalysis, getAnalysis, getRecentAnalyses, checkUserQuota, incrementUserQuota };
