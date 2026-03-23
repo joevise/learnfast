@@ -199,7 +199,8 @@ router.get('/recent', (req, res) => {
   try {
     const limit = Math.min(parseInt(req.query.limit) || 20, 100);
     const offset = parseInt(req.query.offset) || 0;
-    const analyses = getRecentAnalyses(limit, offset);
+    const search = req.query.search || '';
+    const analyses = getRecentAnalyses(limit, offset, search);
     res.json({ success: true, analyses });
   } catch (err) {
     console.error('[Get Recent Error]', err.message);

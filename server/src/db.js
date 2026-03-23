@@ -96,7 +96,12 @@ function getAnalysis(id) {
   return row;
 }
 
-function getRecentAnalyses(limit = 20, offset = 0) {
+function getRecentAnalyses(limit = 20, offset = 0, search = '') {
+  if (search) {
+    const stmt = db.prepare('SELECT id, url, title, created_at FROM analyses WHERE title LIKE ? OR url LIKE ? ORDER BY created_at DESC LIMIT ? OFFSET ?');
+    const pattern = `%${search}%`;
+    return stmt.all(pattern, pattern, limit, offset);
+  }
   const stmt = db.prepare('SELECT id, url, title, created_at FROM analyses ORDER BY created_at DESC LIMIT ? OFFSET ?');
   return stmt.all(limit, offset);
 }
@@ -154,4 +159,4 @@ function getTomorrow() {
   return tomorrow.toISOString();
 }
 
-module.exports = { initDb, getDb, saveAnalysis, getAnalysis, getRecentAnalyses, checkUserQuota, incrementUserQuota };
+module.exports = { initDb, getDb, saveAnalysis, getAnalysis, getRecentAnalyses: (limit, offset, search) => getRecentAnalyses(limit, offset, search), checkUserQuota, incrementUserQuota };

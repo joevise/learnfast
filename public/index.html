@@ -2,8 +2,15 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>LearnFast - 用AI把读过的都记住</title>
+<meta name="description" content="用AI把读过的都记住 - 智能文章学习助手">
+<meta name="theme-color" content="#0a0a0f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="/manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
@@ -30,54 +37,96 @@ body {
   color: var(--text);
   min-height: 100vh;
   line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
 }
 
 .app { max-width: 680px; margin: 0 auto; padding: 0 20px 100px; }
 
 /* Header */
 .header {
-  padding: 48px 0 32px;
+  padding: 40px 0 24px;
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-.logo { font-size: 22px; font-weight: 800; background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-.tagline { font-size: 13px; color: var(--text3); }
+.logo { font-size: 20px; font-weight: 800; background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.tagline { font-size: 12px; color: var(--text3); }
 
-.streak-badge {
+.quota-badge {
   display: flex;
   align-items: center;
   gap: 6px;
   background: var(--card);
   border: 1px solid var(--border);
-  padding: 8px 14px;
+  padding: 6px 12px;
   border-radius: 20px;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
+  color: var(--text2);
+  cursor: pointer;
+  transition: border-color 0.2s;
 }
-.streak-badge .🔥 { font-size: 16px; }
+.quota-badge:hover { border-color: var(--accent); }
+.quota-badge .num { color: var(--accent); font-size: 14px; }
+
+/* Onboarding */
+.onboarding {
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 20px;
+  text-align: center;
+}
+.onboarding h2 { font-size: 16px; margin-bottom: 8px; }
+.onboarding p { font-size: 13px; opacity: 0.9; color: var(--text2); }
+.onboarding .features {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-top: 16px;
+}
+.onboarding .feature {
+  background: rgba(255,255,255,0.1);
+  border-radius: 12px;
+  padding: 12px 8px;
+  text-align: center;
+}
+.onboarding .feature-icon { font-size: 24px; }
+.onboarding .feature-text { font-size: 11px; margin-top: 4px; color: var(--text2); }
+.onboarding-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: none;
+  border: none;
+  color: var(--text2);
+  cursor: pointer;
+  font-size: 18px;
+  padding: 4px;
+}
 
 /* Input Section */
 .input-section {
   background: var(--card);
   border: 1px solid var(--border);
-  border-radius: 20px;
-  padding: 28px;
-  margin-bottom: 24px;
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 20px;
 }
 
-.input-label { font-size: 15px; font-weight: 600; margin-bottom: 12px; }
+.input-label { font-size: 14px; font-weight: 600; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+.input-label .emoji { font-size: 16px; }
 
-.url-input-row { display: flex; gap: 10px; margin-bottom: 12px; }
+.url-input-row { display: flex; gap: 8px; margin-bottom: 8px; }
 
 .url-input {
   flex: 1;
   background: var(--bg2);
   border: 1px solid var(--border);
   border-radius: 12px;
-  padding: 14px 16px;
-  font-size: 15px;
+  padding: 12px 14px;
+  font-size: 14px;
   color: var(--text);
   outline: none;
   font-family: inherit;
@@ -90,18 +139,19 @@ body {
   background: linear-gradient(135deg, var(--accent), var(--accent2));
   border: none;
   border-radius: 12px;
-  padding: 14px 24px;
-  font-size: 15px;
+  padding: 12px 20px;
+  font-size: 14px;
   font-weight: 600;
   color: white;
   cursor: pointer;
-  transition: opacity 0.2s;
+  transition: opacity 0.2s, transform 0.1s;
   white-space: nowrap;
 }
 .analyze-btn:hover { opacity: 0.9; }
+.analyze-btn:active { transform: scale(0.98); }
 .analyze-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-.hint { font-size: 12px; color: var(--text3); }
+.hint { font-size: 12px; color: var(--text3); text-align: center; }
 
 /* Loading */
 .loading {
@@ -111,8 +161,8 @@ body {
 }
 .loading.show { display: block; }
 .loading-spinner {
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   border: 3px solid var(--border);
   border-top-color: var(--accent);
   border-radius: 50%;
@@ -129,99 +179,125 @@ body {
 .result-card {
   background: var(--card);
   border: 1px solid var(--border);
-  border-radius: 20px;
-  padding: 24px;
-  margin-bottom: 20px;
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 16px;
 }
 
 .result-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
+  gap: 12px;
 }
 .result-title {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 700;
   line-height: 1.4;
   flex: 1;
-  padding-right: 12px;
 }
 .result-time {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--text3);
   white-space: nowrap;
 }
 .result-url {
   font-size: 12px;
-  color: var(--text3);
-  margin-bottom: 16px;
+  color: var(--accent);
+  margin-bottom: 12px;
   word-break: break-all;
+  cursor: pointer;
 }
+.result-url:hover { text-decoration: underline; }
+
+/* Actions */
+.result-actions {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.action-btn {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 12px;
+  color: var(--text2);
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.action-btn:hover { border-color: var(--accent); color: var(--text); }
 
 /* Summary */
 .summary { font-size: 14px; line-height: 1.8; color: var(--text2); margin-bottom: 16px; white-space: pre-wrap; }
 
 /* Key Points */
-.key-points-title { font-size: 14px; font-weight: 600; margin-bottom: 12px; color: var(--gold); }
+.key-points-title { font-size: 13px; font-weight: 600; margin-bottom: 10px; color: var(--gold); display: flex; align-items: center; gap: 4px; }
 .point {
   display: flex;
   align-items: flex-start;
   gap: 10px;
-  margin-bottom: 10px;
-  font-size: 14px;
+  margin-bottom: 8px;
+  font-size: 13px;
   color: var(--text2);
 }
 .point-dot {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
   background: var(--accent);
   border-radius: 50%;
-  margin-top: 7px;
+  margin-top: 6px;
   flex-shrink: 0;
 }
 
 /* Flashcards */
-.flashcards-title { font-size: 14px; font-weight: 600; margin-bottom: 12px; color: var(--accent2); }
+.flashcards-title { font-size: 13px; font-weight: 600; margin: 16px 0 10px; color: var(--accent2); display: flex; align-items: center; gap: 4px; }
 
 .flashcard {
   background: var(--bg2);
   border: 1px solid var(--border);
   border-radius: 12px;
-  padding: 16px;
-  margin-bottom: 10px;
+  padding: 14px;
+  margin-bottom: 8px;
   cursor: pointer;
   transition: all 0.2s;
 }
 .flashcard:hover { border-color: var(--accent); }
-.flashcard-q { font-size: 14px; font-weight: 500; margin-bottom: 4px; }
+.flashcard-q { font-size: 13px; font-weight: 500; margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
+.flashcard-q .q-icon { color: var(--accent2); font-weight: 700; }
 .flashcard-a { 
   display: none;
-  font-size: 14px;
+  font-size: 13px;
   color: var(--text2);
   padding-top: 10px;
   border-top: 1px solid var(--border);
   margin-top: 10px;
+  line-height: 1.6;
 }
 .flashcard.show .flashcard-a { display: block; }
 .flashcard-hint { 
   display: block;
-  font-size: 12px;
+  font-size: 11px;
   color: var(--text3);
   margin-top: 8px;
 }
 .flashcard.show .flashcard-hint { display: none; }
 
 /* Quiz */
-.quiz-title { font-size: 14px; font-weight: 600; margin-bottom: 12px; color: var(--success); }
-.quiz-q { font-size: 14px; margin-bottom: 12px; }
-.quiz-options { display: flex; flex-direction: column; gap: 8px; }
+.quiz-title { font-size: 13px; font-weight: 600; margin: 16px 0 10px; color: var(--success); display: flex; align-items: center; gap: 4px; }
+.quiz-q { font-size: 13px; margin-bottom: 10px; color: var(--text2); }
+.quiz-options { display: flex; flex-direction: column; gap: 6px; }
 .quiz-option {
   background: var(--bg2);
   border: 1px solid var(--border);
   border-radius: 10px;
-  padding: 12px 14px;
-  font-size: 14px;
+  padding: 10px 12px;
+  font-size: 13px;
   cursor: pointer;
   transition: all 0.2s;
 }
@@ -229,47 +305,118 @@ body {
 .quiz-option.correct { border-color: var(--success); background: rgba(34, 197, 94, 0.1); }
 .quiz-option.wrong { border-color: var(--danger); background: rgba(239, 68, 68, 0.1); }
 
+/* Search */
+.search-section {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+.search-row {
+  display: flex;
+  gap: 8px;
+}
+.search-input {
+  flex: 1;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 13px;
+  color: var(--text);
+  outline: none;
+  font-family: inherit;
+}
+.search-input:focus { border-color: var(--accent); }
+.search-btn {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: var(--text2);
+  cursor: pointer;
+}
+
 /* History */
-.history-section { margin-top: 32px; }
-.history-title { font-size: 16px; font-weight: 600; margin-bottom: 16px; color: var(--text2); }
-.history-list { display: flex; flex-direction: column; gap: 10px; }
+.history-section { margin-top: 24px; }
+.history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.history-title { font-size: 14px; font-weight: 600; color: var(--text2); }
+.history-count { font-size: 12px; color: var(--text3); }
+.history-list { display: flex; flex-direction: column; gap: 8px; }
 .history-item {
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: 12px;
-  padding: 14px;
+  padding: 12px 14px;
   cursor: pointer;
   transition: border-color 0.2s;
 }
 .history-item:hover { border-color: var(--accent); }
-.history-item-title { font-size: 14px; font-weight: 500; margin-bottom: 4px; }
-.history-item-url { font-size: 12px; color: var(--text3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.history-item-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 4px; }
+.history-item-title { font-size: 13px; font-weight: 500; flex: 1; }
+.history-item-time { font-size: 11px; color: var(--text3); white-space: nowrap; }
+.history-item-url { font-size: 11px; color: var(--text3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* Empty State */
 .empty-state {
   text-align: center;
-  padding: 60px 20px;
+  padding: 40px 20px;
   color: var(--text3);
 }
-.empty-icon { font-size: 48px; margin-bottom: 16px; }
+.empty-icon { font-size: 40px; margin-bottom: 12px; }
+.empty-state p { font-size: 13px; }
 
 /* Error */
 .error-msg {
   background: rgba(239, 68, 68, 0.1);
   border: 1px solid var(--danger);
   border-radius: 12px;
-  padding: 14px;
+  padding: 12px;
   color: var(--danger);
-  font-size: 14px;
+  font-size: 13px;
   margin-bottom: 16px;
 }
+
+/* Toast */
+.toast {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  background: var(--card);
+  border: 1px solid var(--success);
+  border-radius: 12px;
+  padding: 12px 20px;
+  font-size: 13px;
+  color: var(--success);
+  opacity: 0;
+  transition: all 0.3s;
+  z-index: 1000;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
 /* Footer */
 .footer {
   text-align: center;
-  padding: 40px 20px;
+  padding: 32px 20px;
   color: var(--text3);
-  font-size: 12px;
+  font-size: 11px;
+}
+
+/* Mobile */
+@media (max-width: 480px) {
+  .app { padding: 0 16px 80px; }
+  .header { padding: 24px 0 16px; }
+  .onboarding .features { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .onboarding .feature { padding: 10px 6px; }
+  .result-actions { flex-wrap: wrap; }
 }
 </style>
 </head>
@@ -280,21 +427,52 @@ body {
       <div class="logo">LearnFast</div>
       <div class="tagline">用AI把读过的都记住</div>
     </div>
-    <div class="streak-badge">
-      <span>🔥</span>
-      <span id="streakNum">0</span>
-      <span>天</span>
+    <div class="quota-badge" onclick="loadQuota()" title="点击刷新">
+      <span>📊</span>
+      <span>剩余</span>
+      <span class="num" id="quotaNum">--</span>
+      <span>次</span>
     </div>
   </header>
 
+  <!-- Onboarding -->
+  <div class="onboarding" id="onboarding">
+    <button class="onboarding-close" onclick="dismissOnboarding()">×</button>
+    <h2>👋 欢迎使用 LearnFast</h2>
+    <p>粘贴任意文章链接，AI帮你提炼精华、强化记忆</p>
+    <div class="features">
+      <div class="feature">
+        <div class="feature-icon">📰</div>
+        <div class="feature-text">智能解析</div>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">🃏</div>
+        <div class="feature-text">记忆闪卡</div>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">📝</div>
+        <div class="feature-text">小测验</div>
+      </div>
+    </div>
+  </div>
+
   <section class="input-section">
-    <div class="input-label">📰 粘贴任意文章链接，让AI帮你学习</div>
+    <div class="input-label"><span class="emoji">📰</span> 粘贴文章链接</div>
     <div class="url-input-row">
       <input type="url" class="url-input" id="urlInput" placeholder="https://..." />
       <button class="analyze-btn" id="analyzeBtn" onclick="analyzeUrl()">分析</button>
     </div>
     <div class="hint" id="hintText">每天免费分析 30 次</div>
   </section>
+
+  <!-- Search -->
+  <div class="search-section">
+    <div class="input-label"><span class="emoji">🔍</span> 搜索历史</div>
+    <div class="search-row">
+      <input type="text" class="search-input" id="searchInput" placeholder="搜索文章标题或链接..." onkeypress="if(event.key==='Enter')searchHistory()" />
+      <button class="search-btn" onclick="searchHistory()">搜索</button>
+    </div>
+  </div>
 
   <section class="loading" id="loading">
     <div class="loading-spinner"></div>
@@ -309,9 +487,15 @@ body {
         <div class="result-title" id="resultTitle">-</div>
         <div class="result-time" id="resultTime">-</div>
       </div>
-      <div class="result-url" id="resultUrl">-</div>
-      <div class="summary" id="resultSummary">-</div>
+      <div class="result-url" id="resultUrl" onclick="copyUrl()">-</div>
       
+      <div class="result-actions">
+        <button class="action-btn" onclick="copyAll()">📋 复制全文</button>
+        <button class="action-btn" onclick="shareResult()">🔗 分享</button>
+        <button class="action-btn" onclick="exportMarkdown()">📄 导出</button>
+      </div>
+      
+      <div class="summary" id="resultSummary">-</div>
       <div id="resultPoints"></div>
       <div id="resultFlashcards"></div>
       <div id="resultQuiz"></div>
@@ -319,7 +503,10 @@ body {
   </section>
 
   <section class="history-section" id="historySection">
-    <div class="history-title">📚 最近学习</div>
+    <div class="history-header">
+      <div class="history-title">📚 最近学习</div>
+      <div class="history-count" id="historyCount">0 条</div>
+    </div>
     <div class="history-list" id="historyList"></div>
   </section>
 
@@ -328,18 +515,30 @@ body {
   </footer>
 </div>
 
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
 <script>
-// ========== State (synced with server) ==========
+// ========== State ==========
 const API_BASE = window.location.origin;
 
-let quota = {
-  remaining: 30,
-  limit: 30,
-  allowed: true,
-  resetAt: null
-};
+let quota = { remaining: 30, limit: 30, allowed: true, resetAt: null };
+let currentAnalysis = null;
+let allHistory = [];
 
-// ========== Quota Management (server-side) ==========
+// ========== Onboarding ==========
+function dismissOnboarding() {
+  document.getElementById('onboarding').style.display = 'none';
+  localStorage.setItem('learnfast_onboarded', 'true');
+}
+
+function checkOnboarding() {
+  if (localStorage.getItem('learnfast_onboarded') === 'true') {
+    document.getElementById('onboarding').style.display = 'none';
+  }
+}
+
+// ========== Quota ==========
 async function loadQuota() {
   try {
     const response = await fetch(`${API_BASE}/api/quota`);
@@ -350,22 +549,19 @@ async function loadQuota() {
     }
   } catch (err) {
     console.warn('Failed to load quota:', err);
-    // Fallback: assume available
-    quota.remaining = 30;
-    quota.allowed = true;
   }
 }
 
 function updateQuotaUI() {
-  const btn = document.getElementById('analyzeBtn');
+  const num = document.getElementById('quotaNum');
   const hint = document.getElementById('hintText');
-  const streakNum = document.getElementById('streakNum');
+  const btn = document.getElementById('analyzeBtn');
   
-  streakNum.textContent = quota.remaining;
+  num.textContent = quota.remaining;
   
   if (!quota.allowed || quota.remaining <= 0) {
     btn.disabled = true;
-    hint.textContent = `今日次数已用完，将于明天重置`;
+    hint.textContent = '今日次数已用完，明天再来～';
   } else {
     btn.disabled = false;
     hint.textContent = `今日剩余 ${quota.remaining} 次`;
@@ -376,7 +572,6 @@ function updateQuotaUI() {
 async function analyzeUrl() {
   const url = document.getElementById('urlInput').value.trim();
   if (!url) return;
-  
   if (!quota.allowed || quota.remaining <= 0) {
     showError('今日次数已用完，请明天再来～');
     return;
@@ -398,18 +593,18 @@ async function analyzeUrl() {
       throw new Error(data.error || data.message || '分析失败');
     }
 
-    // Update quota from response
     if (data.meta && typeof data.meta.quotaRemaining === 'number') {
       quota.remaining = data.meta.quotaRemaining;
       quota.allowed = quota.remaining > 0;
     } else {
-      // Refresh quota from server
       await loadQuota();
     }
     
     updateQuotaUI();
-    displayResults(data.analysis, url, data.id);
+    currentAnalysis = { ...data.analysis, url, id: data.id };
+    displayResults(currentAnalysis);
     loadHistory();
+    showToast('✅ 分析完成！');
   } catch (err) {
     showError(err.message);
     console.error('Analyze error:', err);
@@ -435,32 +630,30 @@ function hideError() {
   document.getElementById('errorMsg').style.display = 'none';
 }
 
-function displayResults(analysis, url, id) {
+// ========== Display ==========
+function displayResults(analysis) {
   document.getElementById('resultTitle').textContent = analysis.title;
-  document.getElementById('resultUrl').textContent = url;
+  document.getElementById('resultUrl').textContent = analysis.url;
   document.getElementById('resultTime').textContent = new Date().toLocaleString('zh-CN', {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
   document.getElementById('resultSummary').textContent = analysis.summary;
 
-  // Key points
   const pointsEl = document.getElementById('resultPoints');
   pointsEl.innerHTML = `<div class="key-points-title">💡 关键要点</div>`;
   analysis.points.forEach(point => {
     pointsEl.innerHTML += `<div class="point"><span class="point-dot"></span><span>${point}</span></div>`;
   });
 
-  // Flashcards
   const fcEl = document.getElementById('resultFlashcards');
   fcEl.innerHTML = `<div class="flashcards-title">🃏 记忆闪卡（点击翻转）</div>`;
   analysis.flashcards.forEach((fc, i) => {
     fcEl.innerHTML += `
       <div class="flashcard" id="fc-${i}" onclick="toggleFlashcard(${i})">
-        <div class="flashcard-q">Q${i+1}: ${fc.q}</div>
-        <div class="flashcard-a">A: ${fc.a}</div>
-        <div class="flashcard-hint">点击显示答案</div>
+        <div class="flashcard-q"><span class="q-icon">Q${i+1}</span> ${fc.q}</div>
+        <div class="flashcard-a">💡 ${fc.a}</div>
+        <div class="flashcard-hint">👆 点击显示答案</div>
       </div>`;
   });
 
-  // Quiz
   const quizEl = document.getElementById('resultQuiz');
   quizEl.innerHTML = `<div class="quiz-title">📝 小测验</div>
     <div class="quiz-q">${analysis.quiz.q}</div>
@@ -470,6 +663,9 @@ function displayResults(analysis, url, id) {
   analysis.quiz.options.forEach((opt, i) => {
     optionsEl.innerHTML += `<div class="quiz-option" id="quiz-opt-${i}" onclick="selectQuizOption(${i}, ${analysis.quiz.answer})">${opt}</div>`;
   });
+  
+  // Scroll to results
+  document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
 }
 
 function toggleFlashcard(i) {
@@ -480,34 +676,96 @@ function selectQuizOption(selected, correct) {
   const options = document.querySelectorAll('.quiz-option');
   options.forEach((opt, i) => {
     opt.onclick = null;
-    if (i === correct) {
-      opt.classList.add('correct');
-    } else if (i === selected && selected !== correct) {
-      opt.classList.add('wrong');
-    }
+    if (i === correct) opt.classList.add('correct');
+    else if (i === selected) opt.classList.add('wrong');
   });
+}
+
+// ========== Actions ==========
+function copyUrl() {
+  if (currentAnalysis) {
+    navigator.clipboard.writeText(currentAnalysis.url);
+    showToast('🔗 链接已复制');
+  }
+}
+
+function copyAll() {
+  if (!currentAnalysis) return;
+  const text = `# ${currentAnalysis.title}\n\n📎 链接: ${currentAnalysis.url}\n\n## 摘要\n${currentAnalysis.summary}\n\n## 关键要点\n${currentAnalysis.points.map((p, i) => `${i+1}. ${p}`).join('\n')}\n\n## 记忆卡片\n${currentAnalysis.flashcards.map((fc, i) => `**Q${i+1}:** ${fc.q}\n**A:** ${fc.a}`).join('\n')}\n\n## 小测验\n${currentAnalysis.quiz.q}\n答案: ${currentAnalysis.quiz.options[currentAnalysis.quiz.answer]}`;
+  
+  navigator.clipboard.writeText(text);
+  showToast('📋 已复制到剪贴板');
+}
+
+function shareResult() {
+  if (!currentAnalysis) return;
+  if (navigator.share) {
+    navigator.share({ title: currentAnalysis.title, url: currentAnalysis.url });
+  } else {
+    copyUrl();
+    showToast('🔗 链接已复制，可粘贴分享');
+  }
+}
+
+function exportMarkdown() {
+  if (!currentAnalysis) return;
+  const text = `# ${currentAnalysis.title}\n\n> 📎 链接: ${currentAnalysis.url}\n\n## 摘要\n${currentAnalysis.summary}\n\n## 关键要点\n${currentAnalysis.points.map((p, i) => `${i+1}. ${p}`).join('\n')}\n\n## 记忆卡片\n${currentAnalysis.flashcards.map((fc, i) => `**Q${i+1}:** ${fc.q}\n**A:** ${fc.a}`).join('\n')}\n\n## 小测验\n${currentAnalysis.quiz.q}\n答案: ${currentAnalysis.quiz.options[currentAnalysis.quiz.answer]}`;
+  
+  const blob = new Blob([text], { type: 'text/markdown' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `learnfast-${Date.now()}.md`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('📄 已导出 Markdown');
 }
 
 // ========== History ==========
 async function loadHistory() {
   try {
-    const response = await fetch(`${API_BASE}/api/recent?limit=10`);
+    const response = await fetch(`${API_BASE}/api/recent?limit=50`);
     const data = await response.json();
-    
-    const listEl = document.getElementById('historyList');
-    if (data.analyses && data.analyses.length > 0) {
-      listEl.innerHTML = data.analyses.map(a => `
-        <div class="history-item" onclick="loadAnalysis('${a.id}')">
-          <div class="history-item-title">${a.title || '无标题'}</div>
-          <div class="history-item-url">${a.url}</div>
-        </div>
-      `).join('');
-    } else {
-      listEl.innerHTML = '<div class="empty-state"><div class="empty-icon">📚</div><div>还没有学习记录</div></div>';
-    }
+    allHistory = data.analyses || [];
+    renderHistory(allHistory);
   } catch (err) {
     console.warn('Failed to load history:', err);
   }
+}
+
+function searchHistory() {
+  const query = document.getElementById('searchInput').value.trim().toLowerCase();
+  if (!query) {
+    renderHistory(allHistory);
+    return;
+  }
+  const filtered = allHistory.filter(a => 
+    (a.title && a.title.toLowerCase().includes(query)) ||
+    (a.url && a.url.toLowerCase().includes(query))
+  );
+  renderHistory(filtered);
+  showToast(`找到 ${filtered.length} 条结果`);
+}
+
+function renderHistory(items) {
+  const listEl = document.getElementById('historyList');
+  const countEl = document.getElementById('historyCount');
+  countEl.textContent = `${items.length} 条`;
+  
+  if (items.length === 0) {
+    listEl.innerHTML = '<div class="empty-state"><div class="empty-icon">📚</div><p>还没有学习记录</p></div>';
+    return;
+  }
+  
+  listEl.innerHTML = items.map(a => `
+    <div class="history-item" onclick="loadAnalysis('${a.id}')">
+      <div class="history-item-header">
+        <div class="history-item-title">${a.title || '无标题'}</div>
+        <div class="history-item-time">${new Date(a.created_at).toLocaleDateString('zh-CN', {month:'short',day:'numeric'})}</div>
+      </div>
+      <div class="history-item-url">${a.url}</div>
+    </div>
+  `).join('');
 }
 
 async function loadAnalysis(id) {
@@ -515,7 +773,8 @@ async function loadAnalysis(id) {
     const response = await fetch(`${API_BASE}/api/analysis/${id}`);
     const data = await response.json();
     if (data.analysis) {
-      displayResults(data.analysis, data.analysis.url, id);
+      currentAnalysis = { ...data.analysis, id };
+      displayResults(currentAnalysis);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   } catch (err) {
@@ -523,11 +782,19 @@ async function loadAnalysis(id) {
   }
 }
 
-// Load history and quota on init
-loadHistory();
-loadQuota();
+// ========== Toast ==========
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2000);
+}
 
-// Enter key to submit
+// ========== Init ==========
+checkOnboarding();
+loadQuota();
+loadHistory();
+
 document.getElementById('urlInput').addEventListener('keypress', (e) => {
   if (e.key === 'Enter') analyzeUrl();
 });
