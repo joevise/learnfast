@@ -1,0 +1,65 @@
+name: Deploy to Server
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SERVER_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Deploy to server
+        run: |
+          rsync -avz --delete \
+            --exclude='.git' \
+            --exclude='node_modules' \
+            --exclude='.github' \
+            -e "ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" \
+            ./ ubuntu@${{ secrets.SERVER_HOST }}:/app/learnfast/
+
+      - name: Build and restart Docker
+        run: |
+          ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.SERVER_HOST }} << 'ENDSSH'
+            cd /app/learnfast
+            docker compose down || true
+            docker compose build --no-cache
+            docker compose up -d
+            docker image prune -f
+            echo "Deployment complete!"
+          ENDSSH
+
+      - name: Wait for server to be ready
+        run: |
+          sleep 10
+          for i in {1..30}; do
+            if curl -sf http://${{ secrets.SERVER_HOST }}:3000/health > /dev/null 2>&1; then
+              echo "Server is ready!"
+              exit 0
+            fi
+            echo "Waiting for server... ($i/30)"
+            sleep 2
+          done
+          echo "Server did not become ready in time"
+          exit 1
+
+      - name: Health check
+        run: |
+          curl -sf http://${{ secrets.SERVER_HOST }}:3000/health | head -c 200

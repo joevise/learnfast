@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LearnFast - 用AI把读过的都记住</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #0a0a0f;
+  --bg2: #13131a;
+  --card: #1a1a24;
+  --accent: #6366f1;
+  --accent2: #8b5cf6;
+  --gold: #f59e0b;
+  --success: #22c55e;
+  --danger: #ef4444;
+  --text: #fff;
+  --text2: #9ca3af;
+  --text3: #6b7280;
+  --border: rgba(255,255,255,0.08);
+}
+
+body {
+  font-family: 'Inter', -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  line-height: 1.6;
+}
+
+.app { max-width: 680px; margin: 0 auto; padding: 0 20px 100px; }
+
+/* Header */
+.header {
+  padding: 48px 0 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logo { font-size: 22px; font-weight: 800; background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.tagline { font-size: 13px; color: var(--text3); }
+
+.streak-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  padding: 8px 14px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.streak-badge .🔥 { font-size: 16px; }
+
+/* Input Section */
+.input-section {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 28px;
+  margin-bottom: 24px;
+}
+
+.input-label { font-size: 15px; font-weight: 600; margin-bottom: 12px; }
+
+.url-input-row { display: flex; gap: 10px; margin-bottom: 12px; }
+
+.url-input {
+  flex: 1;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  font-size: 15px;
+  color: var(--text);
+  outline: none;
+  font-family: inherit;
+  transition: border-color 0.2s;
+}
+.url-input:focus { border-color: var(--accent); }
+.url-input::placeholder { color: var(--text3); }
+
+.analyze-btn {
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border: none;
+  border-radius: 12px;
+  padding: 14px 24px;
+  font-size: 15px;
+  font-weight: 600;
+  color: white;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  white-space: nowrap;
+}
+.analyze-btn:hover { opacity: 0.9; }
+.analyze-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.hint { font-size: 12px; color: var(--text3); }
+
+/* Loading */
+.loading {
+  display: none;
+  text-align: center;
+  padding: 40px 20px;
+}
+.loading.show { display: block; }
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 16px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-text { color: var(--text2); font-size: 14px; }
+
+/* Results */
+.results { display: none; }
+.results.show { display: block; }
+
+.result-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 24px;
+  margin-bottom: 20px;
+}
+
+.result-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+.result-title {
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.4;
+  flex: 1;
+  padding-right: 12px;
+}
+.result-time {
+  font-size: 12px;
+  color: var(--text3);
+  white-space: nowrap;
+}
+.result-url {
+  font-size: 12px;
+  color: var(--text3);
+  margin-bottom: 16px;
+  word-break: break-all;
+}
+
+/* Summary */
+.summary { font-size: 14px; line-height: 1.8; color: var(--text2); margin-bottom: 16px; white-space: pre-wrap; }
+
+/* Key Points */
+.key-points-title { font-size: 14px; font-weight: 600; margin-bottom: 12px; color: var(--gold); }
+.point {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 10px;
+  font-size: 14px;
+  color: var(--text2);
+}
+.point-dot {
+  width: 6px;
+  height: 6px;
+  background: var(--accent);
+  border-radius: 50%;
+  margin-top: 7px;
+  flex-shrink: 0;
+}
+
+/* Flashcards */
+.flashcards-title { font-size: 14px; font-weight: 600; margin-bottom: 12px; color: var(--accent2); }
+
+.flashcard {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.flashcard:hover { border-color: var(--accent); }
+.flashcard-q { font-size: 14px; font-weight: 500; margin-bottom: 4px; }
+.flashcard-a { 
+  display: none;
+  font-size: 14px;
+  color: var(--text2);
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+  margin-top: 10px;
+}
+.flashcard.show .flashcard-a { display: block; }
+.flashcard-hint { 
+  display: block;
+  font-size: 12px;
+  color: var(--text3);
+  margin-top: 8px;
+}
+.flashcard.show .flashcard-hint { display: none; }
+
+/* Quiz */
+.quiz-title { font-size: 14px; font-weight: 600; margin-bottom: 12px; color: var(--success); }
+.quiz-q { font-size: 14px; margin-bottom: 12px; }
+.quiz-options { display: flex; flex-direction: column; gap: 8px; }
+.quiz-option {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.quiz-option:hover { border-color: var(--accent); }
+.quiz-option.correct { border-color: var(--success); background: rgba(34, 197, 94, 0.1); }
+.quiz-option.wrong { border-color: var(--danger); background: rgba(239, 68, 68, 0.1); }
+
+/* History */
+.history-section { margin-top: 32px; }
+.history-title { font-size: 16px; font-weight: 600; margin-bottom: 16px; color: var(--text2); }
+.history-list { display: flex; flex-direction: column; gap: 10px; }
+.history-item {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+.history-item:hover { border-color: var(--accent); }
+.history-item-title { font-size: 14px; font-weight: 500; margin-bottom: 4px; }
+.history-item-url { font-size: 12px; color: var(--text3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Empty State */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text3);
+}
+.empty-icon { font-size: 48px; margin-bottom: 16px; }
+
+/* Error */
+.error-msg {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid var(--danger);
+  border-radius: 12px;
+  padding: 14px;
+  color: var(--danger);
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+
+/* Footer */
+.footer {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text3);
+  font-size: 12px;
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="header">
+    <div>
+      <div class="logo">LearnFast</div>
+      <div class="tagline">用AI把读过的都记住</div>
+    </div>
+    <div class="streak-badge">
+      <span>🔥</span>
+      <span id="streakNum">0</span>
+      <span>天</span>
+    </div>
+  </header>
+
+  <section class="input-section">
+    <div class="input-label">📰 粘贴任意文章链接，让AI帮你学习</div>
+    <div class="url-input-row">
+      <input type="url" class="url-input" id="urlInput" placeholder="https://..." />
+      <button class="analyze-btn" id="analyzeBtn" onclick="analyzeUrl()">分析</button>
+    </div>
+    <div class="hint" id="hintText">每天免费分析 30 次</div>
+  </section>
+
+  <section class="loading" id="loading">
+    <div class="loading-spinner"></div>
+    <div class="loading-text" id="loadingText">AI 正在分析文章...</div>
+  </section>
+
+  <section class="results" id="results">
+    <div class="error-msg" id="errorMsg" style="display:none;"></div>
+    
+    <div class="result-card" id="resultCard">
+      <div class="result-header">
+        <div class="result-title" id="resultTitle">-</div>
+        <div class="result-time" id="resultTime">-</div>
+      </div>
+      <div class="result-url" id="resultUrl">-</div>
+      <div class="summary" id="resultSummary">-</div>
+      
+      <div id="resultPoints"></div>
+      <div id="resultFlashcards"></div>
+      <div id="resultQuiz"></div>
+    </div>
+  </section>
+
+  <section class="history-section" id="historySection">
+    <div class="history-title">📚 最近学习</div>
+    <div class="history-list" id="historyList"></div>
+  </section>
+
+  <footer class="footer">
+    <p>LearnFast · 用AI强化你的记忆</p>
+  </footer>
+</div>
+
+<script>
+// ========== State ==========
+const API_BASE = window.location.origin;
+const FREE_DAILY = 30;
+
+let state = {
+  dailyCount: 0,
+  lastDate: null
+};
+
+// Load state from localStorage
+const stored = localStorage.getItem('learnfast_state');
+if (stored) {
+  const parsed = JSON.parse(stored);
+  const today = new Date().toDateString();
+  if (parsed.lastDate === today) {
+    state = parsed;
+  } else {
+    state.dailyCount = 0;
+    state.lastDate = today;
+  }
+}
+
+// Update streak badge
+document.getElementById('streakNum').textContent = state.dailyCount > 0 ? Math.min(state.dailyCount, 99) : 0;
+
+function saveState() {
+  localStorage.setItem('learnfast_state', JSON.stringify(state));
+}
+
+function canAnalyze() {
+  return state.dailyCount < FREE_DAILY;
+}
+
+function incrementCount() {
+  state.dailyCount++;
+  state.lastDate = new Date().toDateString();
+  saveState();
+  document.getElementById('streakNum').textContent = Math.min(state.dailyCount, 99);
+  if (state.dailyCount >= FREE_DAILY) {
+    document.getElementById('hintText').textContent = '今日次数已用完，明天再来～';
+    document.getElementById('analyzeBtn').disabled = true;
+  }
+}
+
+// ========== Analyze ==========
+async function analyzeUrl() {
+  const url = document.getElementById('urlInput').value.trim();
+  if (!url) return;
+  if (!canAnalyze()) {
+    showError('今日次数已用完，请明天再来～');
+    return;
+  }
+
+  showLoading(true);
+  hideError();
+
+  try {
+    const response = await fetch(`${API_BASE}/api/analyze`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url })
+    });
+
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data.error || data.message || '分析失败');
+    }
+
+    incrementCount();
+    displayResults(data.analysis, url, data.id);
+    loadHistory();
+  } catch (err) {
+    showError(err.message);
+    console.error('Analyze error:', err);
+  } finally {
+    showLoading(false);
+  }
+}
+
+function showLoading(show) {
+  document.getElementById('loading').classList.toggle('show', show);
+  document.getElementById('results').classList.toggle('show', !show);
+  document.getElementById('analyzeBtn').disabled = show;
+  document.getElementById('urlInput').disabled = show;
+}
+
+function showError(msg) {
+  const el = document.getElementById('errorMsg');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+function hideError() {
+  document.getElementById('errorMsg').style.display = 'none';
+}
+
+function displayResults(analysis, url, id) {
+  document.getElementById('resultTitle').textContent = analysis.title;
+  document.getElementById('resultUrl').textContent = url;
+  document.getElementById('resultTime').textContent = new Date().toLocaleString('zh-CN', {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+  document.getElementById('resultSummary').textContent = analysis.summary;
+
+  // Key points
+  const pointsEl = document.getElementById('resultPoints');
+  pointsEl.innerHTML = `<div class="key-points-title">💡 关键要点</div>`;
+  analysis.points.forEach(point => {
+    pointsEl.innerHTML += `<div class="point"><span class="point-dot"></span><span>${point}</span></div>`;
+  });
+
+  // Flashcards
+  const fcEl = document.getElementById('resultFlashcards');
+  fcEl.innerHTML = `<div class="flashcards-title">🃏 记忆闪卡（点击翻转）</div>`;
+  analysis.flashcards.forEach((fc, i) => {
+    fcEl.innerHTML += `
+      <div class="flashcard" id="fc-${i}" onclick="toggleFlashcard(${i})">
+        <div class="flashcard-q">Q${i+1}: ${fc.q}</div>
+        <div class="flashcard-a">A: ${fc.a}</div>
+        <div class="flashcard-hint">点击显示答案</div>
+      </div>`;
+  });
+
+  // Quiz
+  const quizEl = document.getElementById('resultQuiz');
+  quizEl.innerHTML = `<div class="quiz-title">📝 小测验</div>
+    <div class="quiz-q">${analysis.quiz.q}</div>
+    <div class="quiz-options" id="quizOptions"></div>`;
+  
+  const optionsEl = document.getElementById('quizOptions');
+  analysis.quiz.options.forEach((opt, i) => {
+    optionsEl.innerHTML += `<div class="quiz-option" id="quiz-opt-${i}" onclick="selectQuizOption(${i}, ${analysis.quiz.answer})">${opt}</div>`;
+  });
+}
+
+function toggleFlashcard(i) {
+  document.getElementById(`fc-${i}`).classList.toggle('show');
+}
+
+function selectQuizOption(selected, correct) {
+  const options = document.querySelectorAll('.quiz-option');
+  options.forEach((opt, i) => {
+    opt.onclick = null;
+    if (i === correct) {
+      opt.classList.add('correct');
+    } else if (i === selected && selected !== correct) {
+      opt.classList.add('wrong');
+    }
+  });
+}
+
+// ========== History ==========
+async function loadHistory() {
+  try {
+    const response = await fetch(`${API_BASE}/api/recent?limit=10`);
+    const data = await response.json();
+    
+    const listEl = document.getElementById('historyList');
+    if (data.analyses && data.analyses.length > 0) {
+      listEl.innerHTML = data.analyses.map(a => `
+        <div class="history-item" onclick="loadAnalysis('${a.id}')">
+          <div class="history-item-title">${a.title || '无标题'}</div>
+          <div class="history-item-url">${a.url}</div>
+        </div>
+      `).join('');
+    } else {
+      listEl.innerHTML = '<div class="empty-state"><div class="empty-icon">📚</div><div>还没有学习记录</div></div>';
+    }
+  } catch (err) {
+    console.warn('Failed to load history:', err);
+  }
+}
+
+async function loadAnalysis(id) {
+  try {
+    const response = await fetch(`${API_BASE}/api/analysis/${id}`);
+    const data = await response.json();
+    if (data.analysis) {
+      displayResults(data.analysis, data.analysis.url, id);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  } catch (err) {
+    console.error('Failed to load analysis:', err);
+  }
+}
+
+// Load history on init
+loadHistory();
+
+// Enter key to submit
+document.getElementById('urlInput').addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') analyzeUrl();
+});
+</script>
+</body>
+</html>
